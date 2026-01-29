@@ -1,99 +1,153 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import Blogs from "./Blogs";
-import DeleteButton from "./DeleteBlogs";
+import Blog from "./Blog";
+import { Box, Typography, CircularProgress, Container } from "@mui/material";
 import { makeStyles } from "@mui/styles";
 import config from "../config";
 
 const useStyles = makeStyles((theme) => ({
   container: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    margin: "20px auto",
-    width: "80%",
+    minHeight: "80vh",
+    paddingTop: "40px",
+    paddingBottom: "40px",
   },
-  blogContainer: {
+  header: {
+    textAlign: "center",
+    marginBottom: "40px",
+    fontWeight: "bold !important",
+    color: "#333",
+  },
+  blogsWrapper: {
     display: "flex",
     flexDirection: "column",
+    gap: "30px",
+    maxWidth: "900px",
+    margin: "0 auto",
+  },
+  loadingContainer: {
+    display: "flex",
+    justifyContent: "center",
     alignItems: "center",
-    padding: "20px",
-    border: "1px solid #ccc",
-    borderRadius: "10px",
+    minHeight: "60vh",
+    flexDirection: "column",
+    gap: "20px",
+  },
+  emptyState: {
+    textAlign: "center",
+    padding: "60px 20px",
+    backgroundColor: "#f5f5f5",
+    borderRadius: "12px",
+    maxWidth: "600px",
+    margin: "0 auto",
+  },
+  emptyStateTitle: {
+    fontSize: "24px !important",
+    fontWeight: "600 !important",
+    marginBottom: "12px !important",
+    color: "#555",
+  },
+  emptyStateText: {
+    fontSize: "16px !important",
+    color: "#777",
+  },
+  blogCount: {
+    textAlign: "center",
     marginBottom: "20px",
-    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
-  },
-  blogImage: {
-    width: "100%",
-    height: "auto",
-    borderRadius: "10px",
-    marginBottom: "10px",
-  },
-  editButton: {
-    background: "#f0f0f0",
-    border: "none",
-    padding: "5px 10px",
-    borderRadius: "5px",
-    cursor: "pointer",
-    marginTop: "10px",
-    fontSize: "14px",
-  },
-  deleteButton: {
-    position: "absolute",
-    right: 10,
-    top: 10,
-    color: "red",
-    cursor: "pointer",
+    fontSize: "18px !important",
+    color: "#666",
   },
 }));
 
 const UserBlogs = () => {
   const classes = useStyles();
-  const [user, setUser] = useState();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const id = localStorage.getItem("userId");
 
   const sendRequest = async () => {
-    const res = await axios
-      .get(`${config.BASE_URL}/api/blogs/user/${id}`)
-      .catch((err) => console.log(err));
-    const data = await res?.data;
-    return data;
+    try {
+      const res = await axios.get(`${config.BASE_URL}/api/blogs/user/${id}`);
+      return res.data;
+    } catch (err) {
+      console.log("Error fetching user blogs:", err);
+      return null;
+    }
   };
 
   useEffect(() => {
-    sendRequest().then((data) => setUser(data?.user));
+    if (id) {
+      sendRequest().then((data) => {
+        setUser(data?.data?.user);
+        setLoading(false);
+      });
+    } else {
+      setLoading(false);
+    }
   }, []);
 
-  const handleDelete = (blogId) => {
-    axios.delete(`${config.BASE_URL}/api/blogs/${blogId}`).then(() => {
-      sendRequest().then((data) => setUser(data.user));
-    });
-  };
+  if (loading) {
+    return (
+      <Box className={classes.loadingContainer}>
+        <CircularProgress size={60} />
+        <Typography variant="h6">Loading your blogs...</Typography>
+      </Box>
+    );
+  }
+
+  if (!id) {
+    return (
+      <Container className={classes.container}>
+        <Box className={classes.emptyState}>
+          <Typography className={classes.emptyStateTitle}>
+            🔐 Authentication Required
+          </Typography>
+          <Typography className={classes.emptyStateText}>
+            Please login to view your blogs
+          </Typography>
+        </Box>
+      </Container>
+    );
+  }
+
+  if (!user || !user.blogs || user.blogs.length === 0) {
+    return (
+      <Container className={classes.container}>
+        <Box className={classes.emptyState}>
+          <Typography className={classes.emptyStateTitle}>
+            📝 No Blogs Yet
+          </Typography>
+          <Typography className={classes.emptyStateText}>
+            You haven't created any blogs yet. Start sharing your thoughts!
+          </Typography>
+        </Box>
+      </Container>
+    );
+  }
 
   return (
-    <div className={classes.container}>
-      {user &&
-        user.blogs &&
-        user.blogs.map((blog, index) => (
-          <div key={index} className={classes.blogContainer}>
-            <Blogs
-              id={blog._id}
-              isUser={true}
-              title={blog.title}
-              description={blog.description}
-              imageURL={blog.image}
-              userName={user.name}
-            />
-            <img
-              className={classes.blogImage}
-              src={blog.image}
-              alt={blog.title}
-            />
-            <DeleteButton blogId={blog._id} onDelete={handleDelete} />
-          </div>
+    <Container className={classes.container}>
+      <Typography variant="h3" className={classes.header}>
+        My Blogs
+      </Typography>
+      <Typography className={classes.blogCount}>
+        {user.blogs.length} {user.blogs.length === 1 ? "blog" : "blogs"} published
+      </Typography>
+      <Box className={classes.blogsWrapper}>
+        {user.blogs.map((blog) => (
+          <Blog
+            key={blog._id}
+            id={blog._id}
+            isUser={true}
+            title={blog.title}
+            desc={blog.desc}
+            img={blog.img}
+            user={user.name}
+            date={new Date(blog.date).toLocaleDateString()}
+          />
         ))}
-    </div>
+      </Box>
+    </Container>
   );
 };
 

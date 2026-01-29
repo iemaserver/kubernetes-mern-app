@@ -30,18 +30,21 @@ const Login = () => {
   const sendRequest = async (type = "login") => {
     console.log("inside send req");
     console.log(`${config.BASE_URL}/api/users/${type}`);
-    const res = await axios
-      .post(`${config.BASE_URL}/api/users/${type}`, {
+    try {
+      const res = await axios.post(`${config.BASE_URL}/api/users/${type}`, {
         name: inputs.name,
         email: inputs.email,
         password: inputs.password,
-      })
-      .catch((err) => console.log(err));
+      });
 
-    const data = await res.data;
-    console.log("return");
-    console.log(data);
-    return data;
+      const data = res.data;
+      console.log("return");
+      console.log(data);
+      return data;
+    } catch (err) {
+      console.log("ERROR", err);
+      throw err;
+    }
   };
 
   const handleSubmit = (e) => {
@@ -49,14 +52,16 @@ const Login = () => {
     console.log(inputs);
     if (isSignup) {
       sendRequest("signup")
-        .then((data) => localStorage.setItem("userId", data.user._id))
+        .then((response) => localStorage.setItem("userId", response.data.user._id))
         .then(() => dispath(authActions.login()))
-        .then(() => naviagte("/blogs"));
+        .then(() => naviagte("/blogs"))
+        .catch((err) => console.log("Signup error:", err));
     } else {
       sendRequest()
-        .then((data) => localStorage.setItem("userId", data.user._id))
+        .then((response) => localStorage.setItem("userId", response.data.user._id))
         .then(() => dispath(authActions.login()))
-        .then(() => naviagte("/blogs"));
+        .then(() => naviagte("/blogs"))
+        .catch((err) => console.log("Login error:", err));
     }
   };
   return (

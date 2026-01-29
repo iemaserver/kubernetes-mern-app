@@ -27,16 +27,13 @@ const addBlog = async (req, res, next) => {
     }
 
     const blog = new Blog({ title, desc, img, user, date: currentDate });
-
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    await blog.save({ session });
+    await blog.save();
     existingUser.blogs.push(blog);
-    await existingUser.save({ session });
-    await session.commitTransaction();
+    await existingUser.save();
 
     return res.status(201).json(new ApiResponse(201, { blog }, "Blog created successfully"));
   } catch (e) {
+    console.error("Error adding blog:", e);
     return res.status(500).json(new ApiError(500, e.message));
   }
 };

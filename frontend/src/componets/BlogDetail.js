@@ -26,10 +26,10 @@ const BlogDetail = () => {
     try {
       const res = await axios.get(`${config.BASE_URL}/api/blogs/${id}`);
       const data = res.data;
-      setBlog(data.blog);
+      setBlog(data.data.blog);
       setInputs({
-        title: data.blog.title || "",
-        description: data.blog.description || "",
+        title: data.data.blog.title || "",
+        description: data.data.blog.description || "",
       });
     } catch (err) {
       console.error("Failed to fetch blog details:", err);

@@ -23,10 +23,14 @@ app.use(express.json());
 app.use("/api/users", userRouter);
 app.use("/api/blogs", blogRouter);
 
+app.get("/", (req, res) => {
+  res.send("Server is running!");
+});
+
 app.use("/api", (req, res, next) => {
   res.send("hello");
 });
 
 //define port
 
-app.listen(5001, () => console.log("app started at 5001..."));
+app.listen(5000, () => console.log("app started at 5000..."));
